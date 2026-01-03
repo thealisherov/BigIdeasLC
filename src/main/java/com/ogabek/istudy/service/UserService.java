@@ -1,5 +1,6 @@
 package com.ogabek.istudy.service;
 
+import com.ogabek.istudy.dto.request.CreateUserRequest;
 import com.ogabek.istudy.dto.request.LoginRequest;
 import com.ogabek.istudy.dto.request.UpdateUserRequest;
 import com.ogabek.istudy.dto.response.JwtResponse;
@@ -76,6 +77,40 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
         return convertToDto(user);
+    }
+
+    @Transactional
+    public UserDto createUser(CreateUserRequest request) {
+        // Check if username already exists
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new RuntimeException("Foydalanuvchi nomi allaqachon mavjud: " + request.getUsername());
+        }
+
+        // Validate role
+        Role role;
+        try {
+            role = Role.valueOf(request.getRole().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Noto'g'ri rol: " + request.getRole() + ". SUPER_ADMIN yoki ADMIN bo'lishi kerak.");
+        }
+
+        // Create new user
+        User user = new User();
+        user.setUsername(request.getUsername());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setRole(role);
+
+        // Set branch if provided and role is ADMIN
+        if (request.getBranchId() != null) {
+            Branch branch = branchRepository.findById(request.getBranchId())
+                    .orElseThrow(() -> new RuntimeException("Filial topilmadi: " + request.getBranchId()));
+            user.setBranch(branch);
+        } else if (role == Role.ADMIN) {
+            throw new RuntimeException("ADMIN roli uchun filial majburiy");
+        }
+
+        User savedUser = userRepository.save(user);
+        return convertToDto(savedUser);
     }
 
     @Transactional

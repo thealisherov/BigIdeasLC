@@ -1,5 +1,6 @@
 package com.ogabek.istudy.controller;
 
+import com.ogabek.istudy.dto.request.CreateUserRequest;
 import com.ogabek.istudy.dto.request.UpdateUserRequest;
 import com.ogabek.istudy.dto.response.UserDto;
 import com.ogabek.istudy.security.BranchAccessControl;
@@ -21,6 +22,13 @@ public class UserController {
 
     private final UserService userService;
     private final BranchAccessControl branchAccessControl;
+
+    @PostMapping
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<UserDto> createUser(@Valid @RequestBody CreateUserRequest request) {
+        UserDto user = userService.createUser(request);
+        return ResponseEntity.ok(user);
+    }
 
     @GetMapping
     @PreAuthorize("hasRole('SUPER_ADMIN')")

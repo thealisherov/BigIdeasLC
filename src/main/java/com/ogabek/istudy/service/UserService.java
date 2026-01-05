@@ -120,7 +120,7 @@ public class UserService {
 
         if (user.getRole() == Role.SUPER_ADMIN) {
             long superAdminCount = userRepository.findAll().stream()
-                    .filter(u -> u.getRole() == Role.SUPER_ADMIN)
+                    .filter(u -> u.getRole() == Role.SUPER_ADMIN && !u.isDeleted())
                     .count();
 
             if (superAdminCount <= 1) {
@@ -131,8 +131,9 @@ public class UserService {
         // Delete refresh token first
         refreshTokenService.deleteByUserId(id);
 
-        // Soft delete - the @SQLDelete annotation handles it
-        userRepository.delete(user);
+        // Soft delete by setting deleted flag
+        user.setDeleted(true);
+        userRepository.save(user);
     }
 
     public JwtResponse refreshToken(String refreshTokenStr) {

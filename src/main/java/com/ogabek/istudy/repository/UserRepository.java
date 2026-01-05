@@ -12,13 +12,15 @@ import java.util.Optional;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
-    @Query("SELECT u FROM User u LEFT JOIN FETCH u.branch WHERE u.username = :username")
+    @Query("SELECT u FROM User u LEFT JOIN FETCH u.branch WHERE u.username = :username AND u.deleted = false")
     Optional<User> findByUsername(@Param("username") String username);
 
-    @Query("SELECT u FROM User u LEFT JOIN FETCH u.branch")
+    @Query("SELECT u FROM User u LEFT JOIN FETCH u.branch WHERE u.deleted = false")
     List<User> findAllWithBranch();
 
-    List<User> findByBranchId(Long branchId);
-    
-    boolean existsByUsername(String username);
+    @Query("SELECT u FROM User u WHERE u.branch.id = :branchId AND u.deleted = false")
+    List<User> findByBranchId(@Param("branchId") Long branchId);
+
+    @Query("SELECT COUNT(u) > 0 FROM User u WHERE u.username = :username AND u.deleted = false")
+    boolean existsByUsername(@Param("username") String username);
 }

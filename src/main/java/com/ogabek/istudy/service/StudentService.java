@@ -278,8 +278,9 @@ public class StudentService {
             groupRepository.save(group);
         }
 
-        // Soft delete - the @SQLDelete annotation handles it
-        studentRepository.delete(student);
+        // Soft delete by setting deleted flag
+        student.setDeleted(true);
+        studentRepository.save(student);
     }
 
     private StudentDto convertToDto(Student student, int year, int month) {

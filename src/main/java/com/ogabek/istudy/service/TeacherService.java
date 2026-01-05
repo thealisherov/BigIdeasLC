@@ -103,8 +103,9 @@ public class TeacherService {
                     " ta guruh mavjud. Avval guruhlarni boshqa o'qituvchiga tayinlang yoki o'chiring.");
         }
 
-        // Soft delete - the @SQLDelete annotation handles it
-        teacherRepository.delete(teacher);
+        // Soft delete by setting deleted flag
+        teacher.setDeleted(true);
+        teacherRepository.save(teacher);
     }
 
     private TeacherDto convertToDto(Teacher teacher) {

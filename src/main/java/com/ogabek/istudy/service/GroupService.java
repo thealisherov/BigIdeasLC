@@ -147,8 +147,9 @@ public class GroupService {
         Group group = groupRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Guruh topilmadi: " + id));
 
-        // Soft delete - the @SQLDelete annotation handles it
-        groupRepository.delete(group);
+        // Soft delete by setting deleted flag
+        group.setDeleted(true);
+        groupRepository.save(group);
     }
 
     @Transactional(readOnly = true)

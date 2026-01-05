@@ -36,6 +36,36 @@ public class PaymentController {
         return ResponseEntity.ok(payments);
     }
 
+    // NEW: Get payments by category
+    @GetMapping("/by-category")
+    public ResponseEntity<List<PaymentDto>> getPaymentsByCategory(
+            @RequestParam Long branchId,
+            @RequestParam String category) {
+        
+        if (!branchAccessControl.hasAccessToBranch(branchId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        List<PaymentDto> payments = paymentService.getPaymentsByBranchAndCategory(branchId, category);
+        return ResponseEntity.ok(payments);
+    }
+
+    // NEW: Get payments by category and month
+    @GetMapping("/by-category-and-month")
+    public ResponseEntity<List<PaymentDto>> getPaymentsByCategoryAndMonth(
+            @RequestParam Long branchId,
+            @RequestParam String category,
+            @RequestParam int year,
+            @RequestParam int month) {
+        
+        if (!branchAccessControl.hasAccessToBranch(branchId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        List<PaymentDto> payments = paymentService.getPaymentsByBranchAndCategoryAndMonth(branchId, category, year, month);
+        return ResponseEntity.ok(payments);
+    }
+
     @GetMapping("/unpaid")
     public ResponseEntity<List<UnpaidStudentDto>> getUnpaidStudents(
             @RequestParam Long branchId,

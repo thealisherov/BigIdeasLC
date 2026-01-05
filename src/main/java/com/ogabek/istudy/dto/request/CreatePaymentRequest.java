@@ -22,6 +22,10 @@ public class CreatePaymentRequest {
     @Size(max = 255, message = "Tavsif 255 harfdan kam bo'lishi kerak")
     private String description;
 
+    @NotNull(message = "To'lov turi majburiy")
+    @Pattern(regexp = "^(CARD|CASH)$", message = "To'lov turi CARD yoki CASH bo'lishi kerak")
+    private String category;
+
     @NotNull(message = "Filial majburiy")
     private Long branchId;
 

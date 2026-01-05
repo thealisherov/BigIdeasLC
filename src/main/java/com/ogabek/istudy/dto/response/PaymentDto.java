@@ -16,6 +16,7 @@ public class PaymentDto {
     private String groupName;
     private BigDecimal amount;
     private String description;
+    private String category; // CARD or CASH
     private String status;
     private Long branchId;
     private String branchName;

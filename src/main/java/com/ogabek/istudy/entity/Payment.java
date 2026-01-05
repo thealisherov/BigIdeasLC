@@ -33,6 +33,10 @@ public class Payment {
     private String description;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private PaymentCategory category = PaymentCategory.CASH; // Default to CASH
+
+    @Enumerated(EnumType.STRING)
     private PaymentStatus status = PaymentStatus.COMPLETED;
 
     @ManyToOne(fetch = FetchType.LAZY)

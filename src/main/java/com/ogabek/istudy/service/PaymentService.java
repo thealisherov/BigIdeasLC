@@ -28,6 +28,24 @@ public class PaymentService {
                 .collect(Collectors.toList());
     }
 
+    // NEW: Get payments by category
+    @Transactional(readOnly = true)
+    public List<PaymentDto> getPaymentsByBranchAndCategory(Long branchId, String category) {
+        PaymentCategory paymentCategory = PaymentCategory.valueOf(category.toUpperCase());
+        return paymentRepository.findByBranchIdAndCategoryWithAllRelations(branchId, paymentCategory).stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    // NEW: Get payments by category and month
+    @Transactional(readOnly = true)
+    public List<PaymentDto> getPaymentsByBranchAndCategoryAndMonth(Long branchId, String category, int year, int month) {
+        PaymentCategory paymentCategory = PaymentCategory.valueOf(category.toUpperCase());
+        return paymentRepository.findByBranchIdAndCategoryAndMonthWithAllRelations(branchId, paymentCategory, year, month).stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
     @Transactional(readOnly = true)
     public List<PaymentDto> getPaymentsByStudent(Long studentId) {
         return paymentRepository.findByStudentIdWithRelations(studentId).stream()
@@ -66,6 +84,7 @@ public class PaymentService {
         payment.setGroup(group);
         payment.setAmount(request.getAmount());
         payment.setDescription(request.getDescription());
+        payment.setCategory(PaymentCategory.valueOf(request.getCategory().toUpperCase()));
         payment.setBranch(branch);
         payment.setPaymentYear(request.getPaymentYear());
         payment.setPaymentMonth(request.getPaymentMonth());
@@ -161,6 +180,7 @@ public class PaymentService {
 
         dto.setAmount(payment.getAmount());
         dto.setDescription(payment.getDescription());
+        dto.setCategory(payment.getCategory().name()); // NEW: Add category
         dto.setStatus(payment.getStatus().name());
 
         if (payment.getBranch() != null) {

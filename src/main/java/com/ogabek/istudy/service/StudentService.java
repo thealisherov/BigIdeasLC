@@ -268,20 +268,18 @@ public class StudentService {
         Student student = studentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("O'quvchi topilmadi: " + id));
 
-        try {
-            List<Group> studentGroups = groupRepository.findByBranchIdWithAllRelations(student.getBranch().getId()).stream()
-                    .filter(group -> group.getStudents() != null && group.getStudents().contains(student))
-                    .collect(Collectors.toList());
+        // Remove from all groups first
+        List<Group> studentGroups = groupRepository.findByBranchIdWithAllRelations(student.getBranch().getId()).stream()
+                .filter(group -> group.getStudents() != null && group.getStudents().contains(student))
+                .collect(Collectors.toList());
 
-            for (Group group : studentGroups) {
-                group.getStudents().remove(student);
-                groupRepository.save(group);
-            }
-
-            studentRepository.deleteById(id);
-        } catch (Exception e) {
-            throw new RuntimeException("O'quvchini o'chirishda xatolik yuz berdi: " + e.getMessage());
+        for (Group group : studentGroups) {
+            group.getStudents().remove(student);
+            groupRepository.save(group);
         }
+
+        // Soft delete - the @SQLDelete annotation handles it
+        studentRepository.delete(student);
     }
 
     private StudentDto convertToDto(Student student, int year, int month) {

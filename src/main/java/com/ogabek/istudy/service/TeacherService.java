@@ -96,16 +96,15 @@ public class TeacherService {
         Teacher teacher = teacherRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("O'qituvchi topilmadi: " + id));
 
+        // Check if teacher has active (non-deleted) groups
         List<Group> teacherGroups = groupRepository.findByTeacherId(id);
         if (!teacherGroups.isEmpty()) {
-            throw new RuntimeException("Bu o'qituvchida " + teacherGroups.size() + " ta guruh mavjud. Avval guruhlarni boshqa o'qituvchiga tayinlang yoki o'chiring.");
+            throw new RuntimeException("Bu o'qituvchida " + teacherGroups.size() +
+                    " ta guruh mavjud. Avval guruhlarni boshqa o'qituvchiga tayinlang yoki o'chiring.");
         }
 
-        try {
-            teacherRepository.deleteById(id);
-        } catch (Exception e) {
-            throw new RuntimeException("O'qituvchini o'chirishda xatolik yuz berdi: " + e.getMessage());
-        }
+        // Soft delete - the @SQLDelete annotation handles it
+        teacherRepository.delete(teacher);
     }
 
     private TeacherDto convertToDto(Teacher teacher) {

@@ -16,7 +16,7 @@ public class Expense {
     private Long id;
 
     private String description;
-    
+
     @Column(precision = 10, scale = 2)
     private BigDecimal amount;
 

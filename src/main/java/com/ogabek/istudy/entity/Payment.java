@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -21,15 +23,17 @@ public class Payment {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id", nullable = true)
+    @NotFound(action = NotFoundAction.IGNORE)
     private Student student;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "group_id", nullable = false)
+    @NotFound(action = NotFoundAction.IGNORE)
     private Group group;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
-    
+
     private String description;
 
     @Enumerated(EnumType.STRING)
@@ -39,7 +43,6 @@ public class Payment {
     @JoinColumn(name = "branch_id", nullable = false)
     private Branch branch;
 
-    // Payment month and year for tracking monthly payments
     private int paymentYear;
     private int paymentMonth;
 

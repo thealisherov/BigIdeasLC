@@ -128,12 +128,11 @@ public class UserService {
             }
         }
 
-        try {
-            refreshTokenService.deleteByUserId(id);
-            userRepository.deleteById(id);
-        } catch (Exception e) {
-            throw new RuntimeException("Foydalanuvchini o'chirishda xatolik yuz berdi: " + e.getMessage());
-        }
+        // Delete refresh token first
+        refreshTokenService.deleteByUserId(id);
+
+        // Soft delete - the @SQLDelete annotation handles it
+        userRepository.delete(user);
     }
 
     public JwtResponse refreshToken(String refreshTokenStr) {

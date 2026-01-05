@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -15,6 +17,8 @@ import java.util.Set;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@SQLDelete(sql = "UPDATE groups SET deleted = true WHERE id = ?")
+@Where(clause = "deleted = false")
 public class Group {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,10 +26,9 @@ public class Group {
 
     @Column(nullable = false)
     private String name;
-    
+
     private String description;
 
-    // Price moved from Course to Group directly
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
@@ -45,15 +48,17 @@ public class Group {
     @JoinColumn(name = "branch_id", nullable = false)
     private Branch branch;
 
-    // Schedule fields
     @Column(name = "start_time")
-    private String startTime;  // Store as "13:00", "09:30", etc.
+    private String startTime;
 
     @Column(name = "end_time")
-    private String endTime;    // Store as "15:00", "11:30", etc.
+    private String endTime;
 
     @Column(name = "days_of_week")
-    private String daysOfWeek; // Stored as "MONDAY,WEDNESDAY,FRIDAY"
+    private String daysOfWeek;
+
+    @Column(name = "deleted")
+    private boolean deleted = false;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

@@ -50,9 +50,6 @@ dependencies {
 	// OpenAPI / Swagger documentation
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
 
-	// DevTools (optional, for development)
-	developmentOnly 'org.springframework.boot:spring-boot-devtools'
-
 	// Test dependencies
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
@@ -62,4 +59,9 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+// Just disable the plain JAR
+jar {
+	enabled = false
 }

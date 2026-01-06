@@ -1,1 +1,1 @@
-web: java -jar build/libs/istudy-0.0.1-SNAPSHOT.jar
+web: java -Xmx400m -Xms256m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -Dserver.port=$PORT -jar build/libs/istudy-0.0.1-SNAPSHOT.jar

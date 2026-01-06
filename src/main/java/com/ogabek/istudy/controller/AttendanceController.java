@@ -1,7 +1,9 @@
 package com.ogabek.istudy.controller;
 
+import com.ogabek.istudy.dto.request.BulkAttendanceRequest;
 import com.ogabek.istudy.dto.request.MarkAttendanceRequest;
 import com.ogabek.istudy.dto.response.AttendanceDto;
+import com.ogabek.istudy.dto.response.BulkAttendanceResponse;
 import com.ogabek.istudy.dto.response.StudentAttendanceSummaryDto;
 import com.ogabek.istudy.security.BranchAccessControl;
 import com.ogabek.istudy.service.AttendanceService;
@@ -24,7 +26,17 @@ public class AttendanceController {
     private final AttendanceService attendanceService;
     private final BranchAccessControl branchAccessControl;
 
-    // Mark attendance for a student
+    // NEW: Mark bulk attendance (all students at once)
+    @PostMapping("/bulk")
+    public ResponseEntity<BulkAttendanceResponse> markBulkAttendance(@Valid @RequestBody BulkAttendanceRequest request) {
+        if (!branchAccessControl.hasAccessToBranch(request.getBranchId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        BulkAttendanceResponse response = attendanceService.markBulkAttendance(request);
+        return ResponseEntity.ok(response);
+    }
+
+    // Mark attendance for a single student (optional - can still use this)
     @PostMapping
     public ResponseEntity<AttendanceDto> markAttendance(@Valid @RequestBody MarkAttendanceRequest request) {
         if (!branchAccessControl.hasAccessToBranch(request.getBranchId())) {

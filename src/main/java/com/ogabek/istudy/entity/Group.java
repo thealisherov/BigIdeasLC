@@ -35,7 +35,7 @@ public class Group {
     @JoinColumn(name = "teacher_id")
     private Teacher teacher;
 
-    @ManyMany
+    @ManyToMany
     @JoinTable(
             name = "group_students",
             joinColumns = @JoinColumn(name = "group_id"),

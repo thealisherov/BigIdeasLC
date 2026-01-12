@@ -1,7 +1,6 @@
 package com.ogabek.istudy.repository;
 
 import com.ogabek.istudy.entity.Teacher;
-import com.ogabek.istudy.entity.SalaryType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -22,9 +21,6 @@ public interface TeacherRepository extends JpaRepository<Teacher, Long> {
     @Query("SELECT t FROM Teacher t LEFT JOIN FETCH t.branch WHERE t.branch.id = :branchId AND t.deleted = false AND " +
             "(LOWER(CONCAT(t.firstName, ' ', t.lastName)) LIKE LOWER(CONCAT('%', :name, '%')))")
     List<Teacher> findByBranchIdAndFullNameWithBranch(@Param("branchId") Long branchId, @Param("name") String name);
-
-    @Query("SELECT t FROM Teacher t LEFT JOIN FETCH t.branch WHERE t.branch.id = :branchId AND t.deleted = false AND t.salaryType = :salaryType")
-    List<Teacher> findByBranchIdAndSalaryTypeWithBranch(@Param("branchId") Long branchId, @Param("salaryType") SalaryType salaryType);
 
     @Query("SELECT t FROM Teacher t WHERE t.branch.id = :branchId AND t.deleted = false")
     List<Teacher> findByBranchId(@Param("branchId") Long branchId);

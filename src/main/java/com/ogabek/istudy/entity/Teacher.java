@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -27,15 +26,6 @@ public class Teacher {
 
     private String phoneNumber;
     private String email;
-
-    @Column(precision = 10, scale = 2)
-    private BigDecimal baseSalary = BigDecimal.ZERO;
-
-    @Column(precision = 5, scale = 2)
-    private BigDecimal paymentPercentage = BigDecimal.ZERO;
-
-    @Enumerated(EnumType.STRING)
-    private SalaryType salaryType;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "branch_id", nullable = false)

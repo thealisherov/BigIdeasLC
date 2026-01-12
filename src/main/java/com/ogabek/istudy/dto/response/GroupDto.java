@@ -14,6 +14,7 @@ public class GroupDto {
     private String name;
     private String description;
     private BigDecimal price;
+    private BigDecimal teacherSalaryPerStudent;
     private Long teacherId;
     private String teacherName;
     private Long branchId;

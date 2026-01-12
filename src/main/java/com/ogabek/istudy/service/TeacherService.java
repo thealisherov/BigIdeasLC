@@ -4,7 +4,6 @@ import com.ogabek.istudy.dto.request.CreateTeacherRequest;
 import com.ogabek.istudy.dto.response.TeacherDto;
 import com.ogabek.istudy.entity.Branch;
 import com.ogabek.istudy.entity.Group;
-import com.ogabek.istudy.entity.SalaryType;
 import com.ogabek.istudy.entity.Teacher;
 import com.ogabek.istudy.repository.BranchRepository;
 import com.ogabek.istudy.repository.GroupRepository;
@@ -38,15 +37,6 @@ public class TeacherService {
     }
 
     @Transactional(readOnly = true)
-    public List<TeacherDto> getTeachersBySalaryType(Long branchId, String salaryType) {
-        SalaryType salaryTypeEnum = SalaryType.valueOf(salaryType.toUpperCase());
-        return teacherRepository.findByBranchIdAndSalaryTypeWithBranch(branchId, salaryTypeEnum)
-                .stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-    }
-
-    @Transactional(readOnly = true)
     public TeacherDto getTeacherById(Long id) {
         Teacher teacher = teacherRepository.findByIdWithBranch(id)
                 .orElseThrow(() -> new RuntimeException("Teacher not found with id: " + id));
@@ -62,9 +52,6 @@ public class TeacherService {
         teacher.setFirstName(request.getFirstName());
         teacher.setLastName(request.getLastName());
         teacher.setPhoneNumber(request.getPhoneNumber());
-        teacher.setBaseSalary(request.getBaseSalary());
-        teacher.setPaymentPercentage(request.getPaymentPercentage());
-        teacher.setSalaryType(request.getSalaryType());
         teacher.setBranch(branch);
 
         Teacher savedTeacher = teacherRepository.save(teacher);
@@ -82,9 +69,6 @@ public class TeacherService {
         teacher.setFirstName(request.getFirstName());
         teacher.setLastName(request.getLastName());
         teacher.setPhoneNumber(request.getPhoneNumber());
-        teacher.setBaseSalary(request.getBaseSalary());
-        teacher.setPaymentPercentage(request.getPaymentPercentage());
-        teacher.setSalaryType(request.getSalaryType());
         teacher.setBranch(branch);
 
         Teacher savedTeacher = teacherRepository.save(teacher);
@@ -115,9 +99,6 @@ public class TeacherService {
         dto.setLastName(teacher.getLastName());
         dto.setPhoneNumber(teacher.getPhoneNumber());
         dto.setEmail(teacher.getEmail());
-        dto.setBaseSalary(teacher.getBaseSalary());
-        dto.setPaymentPercentage(teacher.getPaymentPercentage());
-        dto.setSalaryType(teacher.getSalaryType().name());
 
         if (teacher.getBranch() != null) {
             dto.setBranchId(teacher.getBranch().getId());

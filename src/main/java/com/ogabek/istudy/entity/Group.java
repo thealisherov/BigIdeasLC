@@ -28,11 +28,14 @@ public class Group {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
+    @Column(name = "teacher_salary_per_student", precision = 10, scale = 2)
+    private BigDecimal teacherSalaryPerStudent;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "teacher_id")
     private Teacher teacher;
 
-    @ManyToMany
+    @ManyMany
     @JoinTable(
             name = "group_students",
             joinColumns = @JoinColumn(name = "group_id"),

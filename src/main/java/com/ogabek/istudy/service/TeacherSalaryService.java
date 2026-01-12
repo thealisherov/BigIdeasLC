@@ -35,28 +35,32 @@ public class TeacherSalaryService {
         List<Group> teacherGroups = groupRepository.findByTeacherIdWithRelations(teacherId);
 
         List<GroupSalaryInfo> groupInfos = new ArrayList<>();
-        BigDecimal totalStudentPayments = BigDecimal.ZERO;
+        BigDecimal totalSalary = BigDecimal.ZERO;
         int totalPaidStudents = 0;
 
         for (Group group : teacherGroups) {
             int totalStudentsInGroup = group.getStudents() != null ? group.getStudents().size() : 0;
             int paidStudentCount = 0;
-            BigDecimal groupPayments = BigDecimal.ZERO;
+            BigDecimal groupSalaryAmount = BigDecimal.ZERO;
+            BigDecimal teacherSalaryPerStudent = group.getTeacherSalaryPerStudent() != null ?
+                    group.getTeacherSalaryPerStudent() : BigDecimal.ZERO;
 
             if (group.getStudents() != null) {
                 for (Student student : group.getStudents()) {
                     BigDecimal studentGroupPayment = paymentRepository.getTotalPaidByStudentInGroupForMonth(
                             student.getId(), group.getId(), year, month);
 
+                    // Only count students who have paid
                     if (studentGroupPayment != null && studentGroupPayment.compareTo(BigDecimal.ZERO) > 0) {
                         paidStudentCount++;
-                        groupPayments = groupPayments.add(studentGroupPayment);
+                        // Teacher gets fixed amount per paid student
+                        groupSalaryAmount = groupSalaryAmount.add(teacherSalaryPerStudent);
                     }
                 }
             }
 
             totalPaidStudents += paidStudentCount;
-            totalStudentPayments = totalStudentPayments.add(groupPayments);
+            totalSalary = totalSalary.add(groupSalaryAmount);
 
             BigDecimal groupPrice = group.getPrice() != null ? group.getPrice() : BigDecimal.ZERO;
 
@@ -64,44 +68,11 @@ public class TeacherSalaryService {
                     group.getId(),
                     group.getName(),
                     paidStudentCount,
-                    groupPayments,
+                    groupSalaryAmount,
                     totalStudentsInGroup,
                     groupPrice
             );
             groupInfos.add(groupInfo);
-        }
-
-        BigDecimal baseSalary = teacher.getBaseSalary() != null ? teacher.getBaseSalary() : BigDecimal.ZERO;
-        BigDecimal paymentBasedSalary = BigDecimal.ZERO;
-        BigDecimal totalSalary;
-
-        switch (teacher.getSalaryType()) {
-            case FIXED:
-                totalSalary = baseSalary;
-                paymentBasedSalary = BigDecimal.ZERO;
-                break;
-
-            case PERCENTAGE:
-                if (teacher.getPaymentPercentage() != null) {
-                    paymentBasedSalary = totalStudentPayments
-                            .multiply(teacher.getPaymentPercentage())
-                            .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-                }
-                totalSalary = paymentBasedSalary;
-                break;
-
-            case MIXED:
-                if (teacher.getPaymentPercentage() != null) {
-                    paymentBasedSalary = totalStudentPayments
-                            .multiply(teacher.getPaymentPercentage())
-                            .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-                }
-                totalSalary = baseSalary.add(paymentBasedSalary);
-                break;
-
-            default:
-                totalSalary = baseSalary;
-                paymentBasedSalary = BigDecimal.ZERO;
         }
 
         BigDecimal alreadyPaid = salaryPaymentRepository.sumByTeacherAndYearAndMonth(teacherId, year, month);
@@ -115,10 +86,10 @@ public class TeacherSalaryService {
         dto.setTeacherName(teacher.getFirstName() + " " + teacher.getLastName());
         dto.setYear(year);
         dto.setMonth(month);
-        dto.setBaseSalary(baseSalary);
-        dto.setPaymentBasedSalary(paymentBasedSalary);
+        dto.setBaseSalary(BigDecimal.ZERO); // No longer used
+        dto.setPaymentBasedSalary(totalSalary);
         dto.setTotalSalary(totalSalary);
-        dto.setTotalStudentPayments(totalStudentPayments);
+        dto.setTotalStudentPayments(BigDecimal.ZERO); // Not relevant in new system
         dto.setTotalStudents(totalPaidStudents);
         dto.setAlreadyPaid(alreadyPaid);
         dto.setRemainingAmount(remainingAmount);

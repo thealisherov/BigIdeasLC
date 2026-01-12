@@ -75,7 +75,7 @@ public class TeacherController {
 
     @GetMapping("/search")
     public ResponseEntity<List<TeacherDto>> searchTeachers(@RequestParam Long branchId,
-                                                          @RequestParam(required = false) String name) {
+                                                           @RequestParam(required = false) String name) {
         if (!branchAccessControl.hasAccessToBranch(branchId)) {
             return ResponseEntity.status(403).build();
         }
@@ -87,17 +87,6 @@ public class TeacherController {
             teachers = teacherService.getTeachersByBranch(branchId);
         }
 
-        return ResponseEntity.ok(teachers);
-    }
-
-    @GetMapping("/by-salary-type")
-    public ResponseEntity<List<TeacherDto>> getTeachersBySalaryType(@RequestParam Long branchId,
-                                                                   @RequestParam String salaryType) {
-        if (!branchAccessControl.hasAccessToBranch(branchId)) {
-            return ResponseEntity.status(403).build();
-        }
-
-        List<TeacherDto> teachers = teacherService.getTeachersBySalaryType(branchId, salaryType);
         return ResponseEntity.ok(teachers);
     }
 }

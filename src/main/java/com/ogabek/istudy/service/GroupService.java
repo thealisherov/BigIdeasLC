@@ -70,10 +70,16 @@ public class GroupService {
         Branch branch = branchRepository.findById(request.getBranchId())
                 .orElseThrow(() -> new RuntimeException("Branch not found with id: " + request.getBranchId()));
 
+        // Validate that teacher salary doesn't exceed group price
+        if (request.getTeacherSalaryPerStudent().compareTo(request.getPrice()) > 0) {
+            throw new RuntimeException("O'qituvchi maoshi guruh narxidan oshib ketmasligi kerak!");
+        }
+
         Group group = new Group();
         group.setName(request.getName());
         group.setDescription(request.getDescription());
         group.setPrice(request.getPrice());
+        group.setTeacherSalaryPerStudent(request.getTeacherSalaryPerStudent());
         group.setTeacher(teacher);
         group.setBranch(branch);
         group.setStartTime(request.getStartTime());
@@ -112,9 +118,15 @@ public class GroupService {
         Branch branch = branchRepository.findById(request.getBranchId())
                 .orElseThrow(() -> new RuntimeException("Branch not found with id: " + request.getBranchId()));
 
+        // Validate that teacher salary doesn't exceed group price
+        if (request.getTeacherSalaryPerStudent().compareTo(request.getPrice()) > 0) {
+            throw new RuntimeException("O'qituvchi maoshi guruh narxidan oshib ketmasligi kerak!");
+        }
+
         group.setName(request.getName());
         group.setDescription(request.getDescription());
         group.setPrice(request.getPrice());
+        group.setTeacherSalaryPerStudent(request.getTeacherSalaryPerStudent());
         group.setTeacher(teacher);
         group.setBranch(branch);
         group.setStartTime(request.getStartTime());
@@ -220,7 +232,7 @@ public class GroupService {
 
         return convertToDto(group);
     }
-    
+
     @Transactional(readOnly = true)
     public List<GroupDto> searchGroupsByName(Long branchId, String name) {
         return groupRepository.findByBranchIdAndNameContainingIgnoreCase(branchId, name).stream()
@@ -234,6 +246,7 @@ public class GroupService {
         dto.setName(group.getName());
         dto.setDescription(group.getDescription());
         dto.setPrice(group.getPrice());
+        dto.setTeacherSalaryPerStudent(group.getTeacherSalaryPerStudent());
 
         if (group.getTeacher() != null) {
             dto.setTeacherId(group.getTeacher().getId());

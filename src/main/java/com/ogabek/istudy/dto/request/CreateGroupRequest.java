@@ -22,6 +22,10 @@ public class CreateGroupRequest {
     @DecimalMin(value = "0.0", inclusive = false, message = "Narx 0 dan katta bo'lishi kerak")
     private BigDecimal price;
 
+    @NotNull(message = "O'qituvchi uchun to'lov majburiy")
+    @DecimalMin(value = "0.0", inclusive = false, message = "O'qituvchi to'lovi 0 dan katta bo'lishi kerak")
+    private BigDecimal teacherSalaryPerStudent;
+
     @NotNull(message = "O'qituvchi majburiy")
     private Long teacherId;
 

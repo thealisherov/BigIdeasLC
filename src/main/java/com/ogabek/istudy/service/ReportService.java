@@ -2,6 +2,7 @@ package com.ogabek.istudy.service;
 
 import com.ogabek.istudy.repository.ExpenseRepository;
 import com.ogabek.istudy.repository.PaymentRepository;
+import com.ogabek.istudy.repository.ProductSaleRepository;
 import com.ogabek.istudy.repository.TeacherSalaryPaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ public class ReportService {
     private final PaymentRepository paymentRepository;
     private final ExpenseRepository expenseRepository;
     private final TeacherSalaryPaymentRepository salaryPaymentRepository;
+    private final ProductSaleRepository productSaleRepository;
 
     public Map<String, Object> getDailyExpenseReport(Long branchId, LocalDate date) {
         LocalDateTime startOfDay = date.atStartOfDay();
@@ -96,11 +98,16 @@ public class ReportService {
     }
 
     public Map<String, Object> getFinancialSummary(Long branchId, int year, int month) {
-        BigDecimal totalPayments = paymentRepository.sumMonthlyPayments(branchId, year, month);
+        // Income sources
+        BigDecimal studentPayments = paymentRepository.sumMonthlyPayments(branchId, year, month);
+        BigDecimal productSales = productSaleRepository.sumTotalAmountByMonth(branchId, year, month);
+
+        // Expense sources
         BigDecimal regularExpenses = expenseRepository.sumMonthlyExpenses(branchId, year, month);
         BigDecimal salaryPayments = salaryPaymentRepository.sumMonthlySalaryPayments(branchId, year, month);
 
-        BigDecimal totalIncome = totalPayments != null ? totalPayments : BigDecimal.ZERO;
+        BigDecimal totalIncome = (studentPayments != null ? studentPayments : BigDecimal.ZERO)
+                .add(productSales != null ? productSales : BigDecimal.ZERO);
         BigDecimal totalExpenses = (regularExpenses != null ? regularExpenses : BigDecimal.ZERO)
                 .add(salaryPayments != null ? salaryPayments : BigDecimal.ZERO);
         BigDecimal netProfit = totalIncome.subtract(totalExpenses);
@@ -109,6 +116,8 @@ public class ReportService {
         summary.put("year", year);
         summary.put("month", month);
         summary.put("branchId", branchId);
+        summary.put("studentPayments", studentPayments != null ? studentPayments : BigDecimal.ZERO);
+        summary.put("productSales", productSales != null ? productSales : BigDecimal.ZERO);
         summary.put("totalIncome", totalIncome);
         summary.put("regularExpenses", regularExpenses != null ? regularExpenses : BigDecimal.ZERO);
         summary.put("salaryPayments", salaryPayments != null ? salaryPayments : BigDecimal.ZERO);
@@ -123,11 +132,16 @@ public class ReportService {
         LocalDateTime start = startDate.atStartOfDay();
         LocalDateTime end = endDate.atTime(LocalTime.MAX);
 
-        BigDecimal totalPayments = paymentRepository.sumPaymentsByDateRange(branchId, start, end);
+        // Income sources
+        BigDecimal studentPayments = paymentRepository.sumPaymentsByDateRange(branchId, start, end);
+        BigDecimal productSales = productSaleRepository.sumTotalAmountByDateRange(branchId, start, end);
+
+        // Expense sources
         BigDecimal regularExpenses = expenseRepository.sumExpensesByDateRange(branchId, start, end);
         BigDecimal salaryPayments = salaryPaymentRepository.sumSalaryPaymentsByDateRange(branchId, start, end);
 
-        BigDecimal totalIncome = totalPayments != null ? totalPayments : BigDecimal.ZERO;
+        BigDecimal totalIncome = (studentPayments != null ? studentPayments : BigDecimal.ZERO)
+                .add(productSales != null ? productSales : BigDecimal.ZERO);
         BigDecimal totalExpenses = (regularExpenses != null ? regularExpenses : BigDecimal.ZERO)
                 .add(salaryPayments != null ? salaryPayments : BigDecimal.ZERO);
         BigDecimal netProfit = totalIncome.subtract(totalExpenses);
@@ -136,6 +150,8 @@ public class ReportService {
         summary.put("startDate", startDate);
         summary.put("endDate", endDate);
         summary.put("branchId", branchId);
+        summary.put("studentPayments", studentPayments != null ? studentPayments : BigDecimal.ZERO);
+        summary.put("productSales", productSales != null ? productSales : BigDecimal.ZERO);
         summary.put("totalIncome", totalIncome);
         summary.put("regularExpenses", regularExpenses != null ? regularExpenses : BigDecimal.ZERO);
         summary.put("salaryPayments", salaryPayments != null ? salaryPayments : BigDecimal.ZERO);
@@ -150,25 +166,35 @@ public class ReportService {
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
 
-        BigDecimal totalPayments = paymentRepository.sumPaymentsByDateRange(branchId, startOfDay, endOfDay);
+        BigDecimal studentPayments = paymentRepository.sumPaymentsByDateRange(branchId, startOfDay, endOfDay);
+        BigDecimal productSales = productSaleRepository.sumTotalAmountByDateRange(branchId, startOfDay, endOfDay);
+        BigDecimal totalIncome = (studentPayments != null ? studentPayments : BigDecimal.ZERO)
+                .add(productSales != null ? productSales : BigDecimal.ZERO);
 
         Map<String, Object> report = new HashMap<>();
         report.put("date", date);
         report.put("branchId", branchId);
-        report.put("totalPayments", totalPayments != null ? totalPayments : BigDecimal.ZERO);
+        report.put("studentPayments", studentPayments != null ? studentPayments : BigDecimal.ZERO);
+        report.put("productSales", productSales != null ? productSales : BigDecimal.ZERO);
+        report.put("totalIncome", totalIncome);
         report.put("type", "DAILY_PAYMENT");
 
         return report;
     }
 
     public Map<String, Object> getMonthlyPaymentReport(Long branchId, int year, int month) {
-        BigDecimal totalPayments = paymentRepository.sumMonthlyPayments(branchId, year, month);
+        BigDecimal studentPayments = paymentRepository.sumMonthlyPayments(branchId, year, month);
+        BigDecimal productSales = productSaleRepository.sumTotalAmountByMonth(branchId, year, month);
+        BigDecimal totalIncome = (studentPayments != null ? studentPayments : BigDecimal.ZERO)
+                .add(productSales != null ? productSales : BigDecimal.ZERO);
 
         Map<String, Object> report = new HashMap<>();
         report.put("year", year);
         report.put("month", month);
         report.put("branchId", branchId);
-        report.put("totalPayments", totalPayments != null ? totalPayments : BigDecimal.ZERO);
+        report.put("studentPayments", studentPayments != null ? studentPayments : BigDecimal.ZERO);
+        report.put("productSales", productSales != null ? productSales : BigDecimal.ZERO);
+        report.put("totalIncome", totalIncome);
         report.put("type", "MONTHLY_PAYMENT");
 
         return report;
@@ -178,13 +204,18 @@ public class ReportService {
         LocalDateTime start = startDate.atStartOfDay();
         LocalDateTime end = endDate.atTime(LocalTime.MAX);
 
-        BigDecimal totalPayments = paymentRepository.sumPaymentsByDateRange(branchId, start, end);
+        BigDecimal studentPayments = paymentRepository.sumPaymentsByDateRange(branchId, start, end);
+        BigDecimal productSales = productSaleRepository.sumTotalAmountByDateRange(branchId, start, end);
+        BigDecimal totalIncome = (studentPayments != null ? studentPayments : BigDecimal.ZERO)
+                .add(productSales != null ? productSales : BigDecimal.ZERO);
 
         Map<String, Object> report = new HashMap<>();
         report.put("startDate", startDate);
         report.put("endDate", endDate);
         report.put("branchId", branchId);
-        report.put("totalPayments", totalPayments != null ? totalPayments : BigDecimal.ZERO);
+        report.put("studentPayments", studentPayments != null ? studentPayments : BigDecimal.ZERO);
+        report.put("productSales", productSales != null ? productSales : BigDecimal.ZERO);
+        report.put("totalIncome", totalIncome);
         report.put("type", "RANGE_PAYMENT");
 
         return report;

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Payment Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Student Payment Management</h1>
+
+        <!-- Login Section -->
+        <div id="loginSection">
+            <div class="card p-4" style="max-width: 400px; margin: 0 auto;">
+                <h3 class="text-center">Login</h3>
+                <div class="mb-3">
+                    <label class="form-label">Username</label>
+                    <input type="text" id="username" class="form-control" value="admin">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="password" class="form-control" value="admin123">
+                </div>
+                <button onclick="login()" class="btn btn-primary w-100">Login</button>
+            </div>
+        </div>
+
+        <!-- Dashboard Section -->
+        <div id="dashboardSection" class="hidden">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4>Welcome, <span id="currentUser"></span></h4>
+                <button onclick="logout()" class="btn btn-outline-danger">Logout</button>
+            </div>
+
+            <!-- Student Search -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Search Student</h5>
+                    <div class="input-group">
+                        <input type="text" id="studentIdInput" class="form-control" placeholder="Enter Student ID">
+                        <button onclick="loadStudentPayments()" class="btn btn-primary">Search</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment History -->
+            <div id="paymentHistorySection" class="hidden">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5>Payment History</h5>
+                    <button id="payButton" class="btn btn-success hidden" onclick="showPayModal()">Pay</button>
+                </div>
+
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Amount</th>
+                            <th>Date</th>
+                            <th>Category (Type)</th> <!-- Requirement: Show Payment Type -->
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="paymentsTableBody">
+                        <!-- Payments will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Payment Modal -->
+    <div class="modal fade" id="editPaymentModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Payment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="editPaymentId">
+                    <div class="mb-3">
+                        <label class="form-label">Amount</label>
+                        <input type="number" id="editPaymentAmount" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="submitEditPayment()">Save changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

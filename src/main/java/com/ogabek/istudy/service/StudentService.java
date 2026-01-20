@@ -33,17 +33,17 @@ public class StudentService {
 
     @Transactional(readOnly = true)
     public List<StudentDto> getStudentsByBranch(Long branchId) {
-        LocalDate now = LocalDate.now();
+        LocalDate paymentPeriod = getCurrentPaymentPeriod();
         return studentRepository.findByBranchIdWithBranch(branchId).stream()
-                .map(student -> convertToDto(student, now.getYear(), now.getMonthValue()))
+                .map(student -> convertToDto(student, paymentPeriod.getYear(), paymentPeriod.getMonthValue()))
                 .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<StudentDto> getStudentsByBranch(Long branchId, Integer year, Integer month) {
-        LocalDate now = LocalDate.now();
-        int targetYear = year != null ? year : now.getYear();
-        int targetMonth = month != null ? month : now.getMonthValue();
+        LocalDate paymentPeriod = getCurrentPaymentPeriod();
+        int targetYear = year != null ? year : paymentPeriod.getYear();
+        int targetMonth = month != null ? month : paymentPeriod.getMonthValue();
 
         return studentRepository.findByBranchIdWithBranch(branchId).stream()
                 .map(student -> convertToDto(student, targetYear, targetMonth))
@@ -55,9 +55,9 @@ public class StudentService {
         Group group = groupRepository.findByIdWithAllRelations(groupId)
                 .orElseThrow(() -> new RuntimeException("Group not found with id: " + groupId));
 
-        LocalDate now = LocalDate.now();
-        int targetYear = year != null ? year : now.getYear();
-        int targetMonth = month != null ? month : now.getMonthValue();
+        LocalDate paymentPeriod = getCurrentPaymentPeriod();
+        int targetYear = year != null ? year : paymentPeriod.getYear();
+        int targetMonth = month != null ? month : paymentPeriod.getMonthValue();
 
         if (group.getStudents() == null || group.getStudents().isEmpty()) {
             return new ArrayList<>();
@@ -101,8 +101,7 @@ public class StudentService {
                                 student.getParentPhoneNumber(),
                                 remainingAmount,
                                 group.getId(),
-                                group.getName()
-                        ));
+                                group.getName()));
                     }
                 }
             }
@@ -113,9 +112,9 @@ public class StudentService {
 
     @Transactional(readOnly = true)
     public List<StudentDto> searchStudentsByName(Long branchId, String name) {
-        LocalDate now = LocalDate.now();
+        LocalDate paymentPeriod = getCurrentPaymentPeriod();
         return studentRepository.findByBranchIdAndFullName(branchId, name).stream()
-                .map(student -> convertToDto(student, now.getYear(), now.getMonthValue()))
+                .map(student -> convertToDto(student, paymentPeriod.getYear(), paymentPeriod.getMonthValue()))
                 .collect(Collectors.toList());
     }
 
@@ -140,27 +139,29 @@ public class StudentService {
     @Transactional(readOnly = true)
     public Map<String, Object> getStudentStatistics(Long branchId) {
         List<Student> allStudents = studentRepository.findByBranchId(branchId);
-        LocalDate now = LocalDate.now();
+        LocalDate paymentPeriod = getCurrentPaymentPeriod();
         List<Student> unpaidStudents = studentRepository.findUnpaidStudentsByBranchAndMonth(
-                branchId, now.getYear(), now.getMonthValue());
+                branchId, paymentPeriod.getYear(), paymentPeriod.getMonthValue());
 
         Map<String, Object> statistics = new HashMap<>();
         statistics.put("totalStudents", allStudents.size());
         statistics.put("paidStudents", allStudents.size() - unpaidStudents.size());
         statistics.put("unpaidStudents", unpaidStudents.size());
-        statistics.put("paymentRate", allStudents.size() > 0 ?
-                (double)(allStudents.size() - unpaidStudents.size()) / allStudents.size() * 100 : 0);
+        statistics.put("paymentRate",
+                allStudents.size() > 0
+                        ? (double) (allStudents.size() - unpaidStudents.size()) / allStudents.size() * 100
+                        : 0);
 
         return statistics;
     }
 
     @Transactional(readOnly = true)
     public List<StudentDto> getRecentStudents(Long branchId, int limit) {
-        LocalDate now = LocalDate.now();
+        LocalDate paymentPeriod = getCurrentPaymentPeriod();
         return studentRepository.findByBranchId(branchId).stream()
                 .sorted((s1, s2) -> s2.getCreatedAt().compareTo(s1.getCreatedAt()))
                 .limit(limit)
-                .map(student -> convertToDto(student, now.getYear(), now.getMonthValue()))
+                .map(student -> convertToDto(student, paymentPeriod.getYear(), paymentPeriod.getMonthValue()))
                 .collect(Collectors.toList());
     }
 
@@ -168,17 +169,17 @@ public class StudentService {
     public StudentDto getStudentById(Long id) {
         Student student = studentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Student not found with id: " + id));
-        LocalDate now = LocalDate.now();
-        return convertToDto(student, now.getYear(), now.getMonthValue());
+        LocalDate paymentPeriod = getCurrentPaymentPeriod();
+        return convertToDto(student, paymentPeriod.getYear(), paymentPeriod.getMonthValue());
     }
 
     @Transactional(readOnly = true)
     public StudentDto getStudentById(Long id, Integer year, Integer month) {
         Student student = studentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Student not found with id: " + id));
-        LocalDate now = LocalDate.now();
-        int targetYear = year != null ? year : now.getYear();
-        int targetMonth = month != null ? month : now.getMonthValue();
+        LocalDate paymentPeriod = getCurrentPaymentPeriod();
+        int targetYear = year != null ? year : paymentPeriod.getYear();
+        int targetMonth = month != null ? month : paymentPeriod.getMonthValue();
         return convertToDto(student, targetYear, targetMonth);
     }
 
@@ -202,7 +203,8 @@ public class StudentService {
                         .orElseThrow(() -> new RuntimeException("Group not found with id: " + groupId));
 
                 if (!group.getBranch().getId().equals(request.getBranchId())) {
-                    throw new RuntimeException("Group " + groupId + " does not belong to branch " + request.getBranchId());
+                    throw new RuntimeException(
+                            "Group " + groupId + " does not belong to branch " + request.getBranchId());
                 }
 
                 if (group.getStudents() == null) {
@@ -213,8 +215,8 @@ public class StudentService {
             }
         }
 
-        LocalDate now = LocalDate.now();
-        return convertToDto(savedStudent, now.getYear(), now.getMonthValue());
+        LocalDate paymentPeriod = getCurrentPaymentPeriod();
+        return convertToDto(savedStudent, paymentPeriod.getYear(), paymentPeriod.getMonthValue());
     }
 
     @Transactional
@@ -248,7 +250,8 @@ public class StudentService {
                         .orElseThrow(() -> new RuntimeException("Group not found with id: " + groupId));
 
                 if (!group.getBranch().getId().equals(request.getBranchId())) {
-                    throw new RuntimeException("Group " + groupId + " does not belong to branch " + request.getBranchId());
+                    throw new RuntimeException(
+                            "Group " + groupId + " does not belong to branch " + request.getBranchId());
                 }
 
                 if (group.getStudents() == null) {
@@ -283,6 +286,14 @@ public class StudentService {
         studentRepository.save(student);
     }
 
+    private LocalDate getCurrentPaymentPeriod() {
+        LocalDate now = LocalDate.now();
+        if (now.getDayOfMonth() < 5) {
+            return now.minusMonths(1);
+        }
+        return now;
+    }
+
     private StudentDto convertToDto(Student student, int year, int month) {
         StudentDto dto = new StudentDto();
         dto.setId(student.getId());
@@ -299,20 +310,21 @@ public class StudentService {
         dto.setCreatedAt(student.getCreatedAt());
 
         if (student.getBranch() != null) {
-            List<Group> studentGroups = groupRepository.findByBranchIdWithAllRelations(student.getBranch().getId()).stream()
+            List<Group> studentGroups = groupRepository.findByBranchIdWithAllRelations(student.getBranch().getId())
+                    .stream()
                     .filter(group -> group.getStudents() != null && group.getStudents().contains(student))
                     .collect(Collectors.toList());
 
             List<StudentDto.GroupInfo> groupInfos = studentGroups.stream()
                     .map(group -> {
-                        String teacherName = group.getTeacher() != null ?
-                                group.getTeacher().getFirstName() + " " + group.getTeacher().getLastName() : null;
+                        String teacherName = group.getTeacher() != null
+                                ? group.getTeacher().getFirstName() + " " + group.getTeacher().getLastName()
+                                : null;
                         return new StudentDto.GroupInfo(
                                 group.getId(),
                                 group.getName(),
                                 group.getPrice(),
-                                teacherName
-                        );
+                                teacherName);
                     })
                     .collect(Collectors.toList());
 

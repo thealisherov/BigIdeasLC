@@ -1,3 +1,4 @@
+// src/main/java/com/ogabek/istudy/service/StudentService.java
 package com.ogabek.istudy.service;
 
 import com.ogabek.istudy.dto.request.CreateStudentRequest;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -73,6 +75,10 @@ public class StudentService {
         List<UnpaidStudentDto> result = new ArrayList<>();
         List<Group> branchGroups = groupRepository.findByBranchIdWithAllRelations(branchId);
 
+        LocalDate paymentPeriod = getCurrentPaymentPeriod();
+        int targetYear = year != null ? year : paymentPeriod.getYear();
+        int targetMonth = month != null ? month : paymentPeriod.getMonthValue();
+
         for (Group group : branchGroups) {
             if (group.getStudents() != null) {
                 for (Student student : group.getStudents()) {
@@ -86,13 +92,16 @@ public class StudentService {
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
                     } else {
                         totalPaid = paymentRepository.getTotalPaidByStudentInGroupForMonth(
-                                student.getId(), group.getId(), year, month);
+                                student.getId(), group.getId(), targetYear, targetMonth);
                         totalPaid = totalPaid != null ? totalPaid : BigDecimal.ZERO;
                     }
 
                     BigDecimal remainingAmount = group.getPrice().subtract(totalPaid);
 
-                    if (remainingAmount.compareTo(BigDecimal.ZERO) > 0) {
+                    // NEW: Check if payment is actually overdue based on payment day
+                    boolean isOverdue = isPaymentOverdue(student, targetYear, targetMonth);
+
+                    if (remainingAmount.compareTo(BigDecimal.ZERO) > 0 && isOverdue) {
                         result.add(new UnpaidStudentDto(
                                 student.getId(),
                                 student.getFirstName(),
@@ -140,16 +149,42 @@ public class StudentService {
     public Map<String, Object> getStudentStatistics(Long branchId) {
         List<Student> allStudents = studentRepository.findByBranchId(branchId);
         LocalDate paymentPeriod = getCurrentPaymentPeriod();
-        List<Student> unpaidStudents = studentRepository.findUnpaidStudentsByBranchAndMonth(
-                branchId, paymentPeriod.getYear(), paymentPeriod.getMonthValue());
+
+        // Count students by payment status
+        long paidCount = 0;
+        long unpaidCount = 0;
+        long upcomingCount = 0;
+        long overdueCount = 0;
+
+        for (Student student : allStudents) {
+            StudentDto dto = convertToDto(student, paymentPeriod.getYear(), paymentPeriod.getMonthValue());
+            String status = dto.getPaymentStatus();
+
+            switch (status) {
+                case "PAID":
+                    paidCount++;
+                    break;
+                case "OVERDUE":
+                    overdueCount++;
+                    break;
+                case "UPCOMING":
+                    upcomingCount++;
+                    break;
+                default:
+                    unpaidCount++;
+                    break;
+            }
+        }
 
         Map<String, Object> statistics = new HashMap<>();
         statistics.put("totalStudents", allStudents.size());
-        statistics.put("paidStudents", allStudents.size() - unpaidStudents.size());
-        statistics.put("unpaidStudents", unpaidStudents.size());
+        statistics.put("paidStudents", paidCount);
+        statistics.put("unpaidStudents", unpaidCount);
+        statistics.put("upcomingStudents", upcomingCount);
+        statistics.put("overdueStudents", overdueCount);
         statistics.put("paymentRate",
                 allStudents.size() > 0
-                        ? (double) (allStudents.size() - unpaidStudents.size()) / allStudents.size() * 100
+                        ? (double) paidCount / allStudents.size() * 100
                         : 0);
 
         return statistics;
@@ -194,6 +229,7 @@ public class StudentService {
         student.setPhoneNumber(request.getPhoneNumber());
         student.setParentPhoneNumber(request.getParentPhoneNumber());
         student.setBranch(branch);
+        student.setPaymentDayOfMonth(request.getPaymentDayOfMonth()); // NEW
 
         Student savedStudent = studentRepository.save(student);
 
@@ -232,6 +268,7 @@ public class StudentService {
         student.setPhoneNumber(request.getPhoneNumber());
         student.setParentPhoneNumber(request.getParentPhoneNumber());
         student.setBranch(branch);
+        student.setPaymentDayOfMonth(request.getPaymentDayOfMonth()); // NEW
 
         Student savedStudent = studentRepository.save(student);
 
@@ -286,12 +323,68 @@ public class StudentService {
         studentRepository.save(student);
     }
 
+    // ==================== PRIVATE HELPER METHODS ====================
+
     private LocalDate getCurrentPaymentPeriod() {
         LocalDate now = LocalDate.now();
         if (now.getDayOfMonth() < 5) {
             return now.minusMonths(1);
         }
         return now;
+    }
+
+    /**
+     * NEW: Calculate the next payment due date for a student
+     */
+    private LocalDate calculateNextDueDate(Student student, int year, int month) {
+        if (student.getPaymentDayOfMonth() == null) {
+            return null; // No payment day set
+        }
+
+        LocalDate today = LocalDate.now();
+        int dayOfMonth = student.getPaymentDayOfMonth();
+
+        try {
+            LocalDate dueDate = LocalDate.of(year, month, dayOfMonth);
+
+            // If the calculated due date has already passed, calculate for next month
+            if (dueDate.isBefore(today)) {
+                LocalDate nextMonth = dueDate.plusMonths(1);
+                try {
+                    return LocalDate.of(nextMonth.getYear(), nextMonth.getMonthValue(), dayOfMonth);
+                } catch (Exception e) {
+                    // If day doesn't exist in next month, use last day
+                    return nextMonth.withDayOfMonth(nextMonth.lengthOfMonth());
+                }
+            }
+
+            return dueDate;
+        } catch (Exception e) {
+            // Handle invalid dates (e.g., Feb 30)
+            LocalDate firstOfMonth = LocalDate.of(year, month, 1);
+            return firstOfMonth.withDayOfMonth(firstOfMonth.lengthOfMonth());
+        }
+    }
+
+    /**
+     * NEW: Check if a payment is overdue for a student in a specific month
+     */
+    private boolean isPaymentOverdue(Student student, int year, int month) {
+        if (student.getPaymentDayOfMonth() == null) {
+            return false; // Can't be overdue if no payment day is set
+        }
+
+        LocalDate today = LocalDate.now();
+        LocalDate dueDate;
+
+        try {
+            dueDate = LocalDate.of(year, month, student.getPaymentDayOfMonth());
+        } catch (Exception e) {
+            // If day doesn't exist in month, use last day of month
+            dueDate = LocalDate.of(year, month, 1).plusMonths(1).minusDays(1);
+        }
+
+        return today.isAfter(dueDate);
     }
 
     private StudentDto convertToDto(Student student, int year, int month) {
@@ -301,6 +394,7 @@ public class StudentService {
         dto.setLastName(student.getLastName());
         dto.setPhoneNumber(student.getPhoneNumber());
         dto.setParentPhoneNumber(student.getParentPhoneNumber());
+        dto.setPaymentDayOfMonth(student.getPaymentDayOfMonth()); // NEW
 
         if (student.getBranch() != null) {
             dto.setBranchId(student.getBranch().getId());
@@ -308,6 +402,10 @@ public class StudentService {
         }
 
         dto.setCreatedAt(student.getCreatedAt());
+
+        // NEW: Calculate next due date
+        LocalDate nextDueDate = calculateNextDueDate(student, year, month);
+        dto.setNextDueDate(nextDueDate);
 
         if (student.getBranch() != null) {
             List<Group> studentGroups = groupRepository.findByBranchIdWithAllRelations(student.getBranch().getId())
@@ -336,6 +434,9 @@ public class StudentService {
         return dto;
     }
 
+    /**
+     * UPDATED: Calculate payment status with due date awareness
+     */
     private void calculatePaymentStatus(StudentDto dto, Long studentId, int year, int month) {
         Boolean hasPaid = studentRepository.hasStudentPaidInMonth(studentId, year, month);
         dto.setHasPaidInMonth(hasPaid != null ? hasPaid : false);
@@ -349,12 +450,39 @@ public class StudentService {
         BigDecimal remaining = expectedPayment.subtract(dto.getTotalPaidInMonth());
         dto.setRemainingAmount(remaining.compareTo(BigDecimal.ZERO) > 0 ? remaining : BigDecimal.ZERO);
 
-        if (dto.getTotalPaidInMonth().compareTo(BigDecimal.ZERO) == 0) {
-            dto.setPaymentStatus("UNPAID");
-        } else if (dto.getTotalPaidInMonth().compareTo(expectedPayment) >= 0) {
+        // NEW: Enhanced status calculation with due date awareness
+        LocalDate nextDueDate = dto.getNextDueDate();
+        LocalDate today = LocalDate.now();
+
+        if (dto.getTotalPaidInMonth().compareTo(expectedPayment) >= 0) {
+            // Fully paid
             dto.setPaymentStatus("PAID");
+        } else if (nextDueDate == null) {
+            // No due date set - use old logic
+            if (dto.getTotalPaidInMonth().compareTo(BigDecimal.ZERO) == 0) {
+                dto.setPaymentStatus("UNPAID");
+            } else {
+                dto.setPaymentStatus("PARTIAL");
+            }
         } else {
-            dto.setPaymentStatus("PARTIAL");
+            // Has due date - check if overdue
+            boolean hasPartialPayment = dto.getTotalPaidInMonth().compareTo(BigDecimal.ZERO) > 0;
+
+            if (today.isBefore(nextDueDate)) {
+                // Payment not yet due
+                dto.setPaymentStatus(hasPartialPayment ? "PARTIAL" : "UPCOMING");
+            } else {
+                // Payment is past due date
+                long daysOverdue = ChronoUnit.DAYS.between(nextDueDate, today);
+
+                if (daysOverdue >= 7) {
+                    // More than a week overdue
+                    dto.setPaymentStatus("OVERDUE");
+                } else {
+                    // Less than a week overdue
+                    dto.setPaymentStatus(hasPartialPayment ? "PARTIAL" : "UNPAID");
+                }
+            }
         }
 
         LocalDateTime lastPaymentDate = studentRepository.getLastPaymentDate(studentId);
@@ -381,6 +509,7 @@ public class StudentService {
         }
         dto.setPaymentYear(payment.getPaymentYear());
         dto.setPaymentMonth(payment.getPaymentMonth());
+        dto.setDueDate(payment.getDueDate()); // NEW
         dto.setCreatedAt(payment.getCreatedAt());
         return dto;
     }
@@ -411,6 +540,7 @@ public class StudentService {
             dto.setDaysOfWeek(new ArrayList<>());
         }
 
+        dto.setStudentCount(group.getStudents() != null ? group.getStudents().size() : 0);
         dto.setCreatedAt(group.getCreatedAt());
         return dto;
     }

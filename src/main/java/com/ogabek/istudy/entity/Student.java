@@ -1,3 +1,4 @@
+// src/main/java/com/ogabek/istudy/entity/Student.java
 package com.ogabek.istudy.entity;
 
 import jakarta.persistence.*;
@@ -33,6 +34,11 @@ public class Student {
 
     @Column(name = "deleted")
     private boolean deleted = false;
+
+    // NEW: Day of month when student pays (1-31)
+    // Example: 15 means student pays on 15th of each month
+    @Column(name = "payment_day_of_month")
+    private Integer paymentDayOfMonth;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

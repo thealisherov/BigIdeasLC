@@ -1,9 +1,6 @@
 package com.ogabek.istudy.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -31,4 +28,9 @@ public class CreateStudentRequest {
     private Long branchId;
 
     private List<Long> groupIds = new ArrayList<>();
+
+    // NEW: When does this student pay each month? (1-31)
+    @Min(value = 1, message = "To'lov kuni 1 dan kichik bo'lmasligi kerak")
+    @Max(value = 31, message = "To'lov kuni 31 dan katta bo'lmasligi kerak")
+    private Integer paymentDayOfMonth;
 }

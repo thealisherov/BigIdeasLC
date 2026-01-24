@@ -1,9 +1,11 @@
+// src/main/java/com/ogabek/istudy/dto/response/StudentDto.java
 package com.ogabek.istudy.dto.response;
 
 import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,8 +29,12 @@ public class StudentDto {
     private Boolean hasPaidInMonth;
     private BigDecimal totalPaidInMonth;
     private BigDecimal remainingAmount;
-    private String paymentStatus; // "PAID", "PARTIAL", "UNPAID"
+    private String paymentStatus; // "PAID", "PARTIAL", "UNPAID", "UPCOMING", "OVERDUE"
     private LocalDateTime lastPaymentDate;
+    
+    // NEW FIELDS
+    private Integer paymentDayOfMonth; // Day of month when student pays (1-31)
+    private LocalDate nextDueDate; // Next payment due date
 
     public StudentDto() {}
 

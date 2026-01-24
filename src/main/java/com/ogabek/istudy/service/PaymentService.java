@@ -89,6 +89,10 @@ public class PaymentService {
         payment.setPaymentYear(request.getPaymentYear());
         payment.setPaymentMonth(request.getPaymentMonth());
 
+        // SIMPLE: Calculate due date
+        LocalDate dueDate = calculateDueDate(student, request.getPaymentYear(), request.getPaymentMonth());
+        payment.setDueDate(dueDate);
+
         Payment savedPayment = paymentRepository.save(payment);
 
         Payment paymentWithRelations = paymentRepository.findByIdWithAllRelations(savedPayment.getId())
@@ -96,6 +100,22 @@ public class PaymentService {
 
         return convertToDto(paymentWithRelations);
     }
+
+    // SIMPLE: Calculate when payment is due
+    private LocalDate calculateDueDate(Student student, int year, int month) {
+        // Use student's payment day if available
+        int dayOfMonth = student.getPaymentDayOfMonth() != null
+                ? student.getPaymentDayOfMonth()
+                : 1; // Default to 1st if not set
+
+        try {
+            return LocalDate.of(year, month, dayOfMonth);
+        } catch (Exception e) {
+            // Handle invalid dates (e.g., Feb 30)
+            return LocalDate.of(year, month, 1).plusMonths(1).minusDays(1);
+        }
+    }
+
 
     @Transactional
     public PaymentDto updatePaymentAmount(Long id, BigDecimal newAmount) {
@@ -180,7 +200,7 @@ public class PaymentService {
 
         dto.setAmount(payment.getAmount());
         dto.setDescription(payment.getDescription());
-        dto.setCategory(payment.getCategory().name()); // NEW: Add category
+        dto.setCategory(payment.getCategory().name());
         dto.setStatus(payment.getStatus().name());
 
         if (payment.getBranch() != null) {
@@ -190,6 +210,7 @@ public class PaymentService {
 
         dto.setPaymentYear(payment.getPaymentYear());
         dto.setPaymentMonth(payment.getPaymentMonth());
+        dto.setDueDate(payment.getDueDate());
         dto.setCreatedAt(payment.getCreatedAt());
         return dto;
     }
